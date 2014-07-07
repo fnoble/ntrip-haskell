@@ -19,6 +19,7 @@ import qualified System.IO as IO
 import Network
 import Text.Printf
 import qualified Data.ByteString.Char8 as B
+import qualified Data.Text as T
 import Control.Concurrent.STM
 import qualified Control.Exception as E
 import qualified Data.HashMap.Strict as H
@@ -27,6 +28,8 @@ import System.Log.Handler (setFormatter)
 import System.Log.Handler.Simple (streamHandler)
 import System.Log.Formatter (simpleLogFormatter)
 import Data.Typeable
+import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as CT
 
 import Network.Ntrip.Caster.Types
 import Network.Ntrip.Caster.NtripServer
@@ -87,19 +90,33 @@ newConnection s c = do
         (connHost c) (show $ connPort c) (B.unpack req_line)
 
 -- Create the initial state of the caster.
-initialState :: IO CasterState
-initialState = do
+initialState :: CT.Config -> IO CasterState
+initialState cfg = do
   -- The list of mountpoints is stored as a HashMap in an STM TVar, initialise
   -- and empty HashMap and create a new TVar to hold it.
   mps <- newTVarIO H.empty
-  return CasterState { mountpoints = mps
-                     }
+  return CasterState {
+    config = cfg,
+    mountpoints = mps
+  }
 
-casterPort :: PortNumber
-casterPort = 44466
+confUpdated :: CT.ChangeHandler
+confUpdated k (Just v) =
+  L.infoM "caster.config" $ printf "Parameter '%s' changed to %s"
+    (T.unpack k) (show v)
+confUpdated k Nothing =
+  L.infoM "caster.config" $ printf "Parameter '%s' removed (using default)"
+    (T.unpack k)
 
 main :: IO ()
 main = do
+  -- Open the configuration file if present.
+  (cfg, _) <- C.autoReload C.autoConfig [C.Optional "caster.conf"]
+
+  -- Register a default handler for all configuration changes so we can log
+  -- configuration reloads.
+  C.subscribe cfg (C.prefix "caster") confUpdated
+
   -- Configure hslogger to output everything (DEBUG and above) to stdout.
   log_handler <- streamHandler IO.stdout L.DEBUG >>= \lh -> return $
     setFormatter lh (simpleLogFormatter "[$time $loggername $prio] $msg")
@@ -107,10 +124,11 @@ main = do
     L.setLevel L.DEBUG . L.setHandlers [log_handler]
 
   -- Create the initial caster state.
-  s <- initialState
+  s <- initialState cfg
 
   -- Start a listener loop forking a new thread and calling newConnection very
   -- time we receive an inbound connection.
+  casterPort <- liftM fromIntegral $ C.lookupDefault (2021 :: Int) cfg "caster.port"
   withSocketsDo $ do
     sock <- listenOn $ PortNumber casterPort
     L.infoM "caster" $ printf "Caster listening on port %s" (show casterPort)

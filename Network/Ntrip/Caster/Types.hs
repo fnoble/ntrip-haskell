@@ -16,6 +16,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as H
 import Control.Concurrent.STM
 import Control.Concurrent.Chan
+import qualified Data.Configurator.Types as CT
 
 data Connection = Connection {
   handle :: IO.Handle,
@@ -49,6 +50,7 @@ data Request = Request {
   deriving Show
 
 data CasterState = CasterState {
+  config :: CT.Config,
   mountpoints :: TVar (H.HashMap B.ByteString Mountpoint)
 }
 

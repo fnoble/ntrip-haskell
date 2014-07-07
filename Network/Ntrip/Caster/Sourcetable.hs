@@ -14,10 +14,12 @@ module Network.Ntrip.Caster.Sourcetable (
   runSourcetable
 ) where
 
+import Text.Printf
 import qualified System.IO as IO
 import qualified Data.ByteString.Char8 as B
 import Control.Concurrent.STM
 import qualified Data.HashMap.Strict as H
+import qualified Data.Configurator as C
 
 import Network.Ntrip.Caster.Types
 
@@ -26,5 +28,12 @@ runSourcetable s c = do
   let h = handle c
   B.hPutStrLn h "SOURCETABLE 200 OK"
   mps <- atomically . readTVar $ mountpoints s
-  IO.hPrint h $ map fst $ H.toList mps
+  let st_bs = B.pack $ show $ map fst $ H.toList mps
+      len = B.length st_bs
+
+  caster_id <- C.lookupDefault ("SwiftNtripCaster" :: String) (config s) "caster.identifier"
+  IO.hPutStrLn h $ printf "Server: %s/1.0" caster_id
+  IO.hPutStrLn h $ "Content-Type: text/plain"
+  IO.hPutStrLn h $ printf "Content-Length: %d\n" len
+  B.hPutStrLn h st_bs
 
