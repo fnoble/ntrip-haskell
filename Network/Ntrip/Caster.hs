@@ -82,9 +82,10 @@ newConnection s c = do
   req_line <- B.hGetLine h
   let req = parseRequestLine req_line
   case req of
-    Just (Get mp)       -> runClient s c mp
+    Just (Get mp)      -> runClient s c mp
+    -- TODO: Limit the maximum number of server connections.
     Just (Source mp _) -> runServer s c mp
-    Nothing             ->
+    Nothing            ->
       L.errorM "caster.connection" $ printf
         "%s:%s : Invalid request '%s'"
         (connHost c) (show $ connPort c) (B.unpack req_line)
@@ -128,7 +129,8 @@ main = do
 
   -- Start a listener loop forking a new thread and calling newConnection very
   -- time we receive an inbound connection.
-  casterPort <- liftM fromIntegral $ C.lookupDefault (2021 :: Int) cfg "caster.port"
+  casterPort <- liftM fromIntegral $
+    C.lookupDefault (2021 :: Int) cfg "caster.port"
   withSocketsDo $ do
     sock <- listenOn $ PortNumber casterPort
     L.infoM "caster" $ printf "Caster listening on port %s" (show casterPort)

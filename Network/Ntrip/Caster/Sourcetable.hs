@@ -33,7 +33,7 @@ runSourcetable s c = do
 
   caster_id <- C.lookupDefault ("SwiftNtripCaster" :: String) (config s) "caster.identifier"
   IO.hPutStrLn h $ printf "Server: %s/1.0" caster_id
-  IO.hPutStrLn h $ "Content-Type: text/plain"
+  IO.hPutStrLn h "Content-Type: text/plain"
   IO.hPutStrLn h $ printf "Content-Length: %d\n" len
   B.hPutStrLn h st_bs
 
