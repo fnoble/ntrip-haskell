@@ -74,7 +74,6 @@ parseRequestLine' _ = Nothing
 newConnection :: CasterState -> Connection -> IO ()
 newConnection s c = do
   let h = handle c
-  IO.hSetBuffering h IO.LineBuffering
   -- TODO: Limit line length to prevent malicious client from using up all our
   -- memory.
   req_line <- B.hGetLine h
