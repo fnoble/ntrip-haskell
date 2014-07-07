@@ -1,0 +1,33 @@
+name:                ntrip
+version:             0.1.0.0
+synopsis:            Haskell NTrip Library and Caster
+description:         Haskell NTrip Library and Caster
+homepage:            http://www.swift-nav.com
+-- license:
+license-file:        LICENSE
+author:              Fergus Noble
+maintainer:          fergus@swift-nav.com
+copyright:           (c) 2014 Swift Navigation Inc.
+category:            Network
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable ntrip-caster
+  main-is:             Network/Ntrip/Caster.hs
+
+  other-modules:       Network.Ntrip.Caster.Types,
+                       Network.Ntrip.Caster.NtripServer,
+                       Network.Ntrip.Caster.NtripClient,
+                       Network.Ntrip.Caster.Sourcetable
+
+  ghc-options:         -Wall -Werror -fwarn-tabs
+
+  build-depends:       base >=4.7 && <4.8,
+                       monad-loops >=0.4 && <0.5,
+                       network >=2.5 && <2.6,
+                       bytestring >=0.10 && <0.11,
+                       stm >=2.4 && <2.5,
+                       unordered-containers >=0.2 && <0.3,
+                       hslogger >=1.2 && <1.3
+
+  default-language:    Haskell2010
