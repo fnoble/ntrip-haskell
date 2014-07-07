@@ -26,16 +26,19 @@ import Network.Ntrip.Caster.Sourcetable
 
 runClient :: CasterState -> Connection -> B.ByteString -> IO ()
 runClient s c mp_name = do
+  L.infoM "caster.client" $ printf
+    "%s:%s : Client requested mountpoint '%s'"
+    (connHost c) (show $ connPort c) (B.unpack mp_name)
   mps <- atomically . readTVar $ mountpoints s
   case H.lookup mp_name mps of
-    Nothing  ->
+    Nothing  -> do
       -- Mountpoint was now found, send the sourcetable.
+      L.warningM "caster.client" $ printf
+        "%s:%s : Requested mountpoint '%s' doesn't exist, sending sourcetable"
+        (connHost c) (show $ connPort c) (B.unpack mp_name)
       runSourcetable s c
     Just mp -> do
       -- Mountpoint exists
-      L.infoM "caster.client" $ printf
-        "%s:%s : Client (GET) request to mountpoint '%s'"
-        (connHost c) (show $ connPort c) (B.unpack mp_name)
       -- Make our own copy of the Channel
       ch <- dupChan $ channel mp
       let h = handle c
