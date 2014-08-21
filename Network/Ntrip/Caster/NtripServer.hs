@@ -73,12 +73,15 @@ runServer s c mp_name = do
           (connHost c) (show $ connPort c) (B.unpack mp_name)
 
         B.hPutStrLn h "ICY 200 OK"
-        loop h mp
+
+        chunk_size <- C.lookupDefault (1024 :: Int)
+          (config s) "caster.chunk_size"
+
+        loop chunk_size h mp
   where
-    loop h mp = do
-      -- TODO: Make chunk size configurable
-      d <- B.hGetSome h 1024
+    loop chunk_size h mp = do
+      d <- B.hGetSome h chunk_size
       unless (d == "") $ do
         writeChan (channel mp) (GnssData d)
-        loop h mp
+        loop chunk_size h mp
 
