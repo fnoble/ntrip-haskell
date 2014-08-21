@@ -11,8 +11,41 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Network.Ntrip.Caster.Sourcetable (
-  runSourcetable
+  runSourcetable,
+  SourceTableRecord
 ) where
+
+data StreamFormat = FormatRAW | FormatRTCMv3 | FormatOther T.Text
+  deriving Show
+
+data CarrierField = NoCarrier | L1Carrier | L1L2Carrier
+  deriving Show
+
+data AuthField = AuthNone | AuthBasic | AuthDigest
+  deriving Show
+
+data SourceTableRecord = SourceStream {
+                           mountpoint :: T.Text,
+                           identifier :: T.Text,
+                           format :: StreamFormat,
+                           formatDetails :: T.Text,
+                           carrier :: CarrierField,
+                           navSystems :: T.Text,
+                           network :: T.Text,
+                           country :: T.Text,
+                           latitude :: Double,
+                           longitude :: Double,
+                           nmeaRequired :: Bool,
+                           networkSolution :: Bool,
+                           generator :: T.Text,
+                           comprEncryp :: T.Text,
+                           authentication :: AuthField,
+                           fee :: Bool,
+                           bitrate :: Int
+                         }
+                       | SourceCaster
+                       | SourceNetwork
+  deriving Show
 
 import Text.Printf
 import qualified System.IO as IO
