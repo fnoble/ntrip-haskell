@@ -59,14 +59,24 @@ import Network.Ntrip.Caster.Types
 runSourcetable :: CasterState -> Connection -> IO ()
 runSourcetable s c = do
   let h = handle c
+  -- Output response line
   B.hPutStrLn h "SOURCETABLE 200 OK"
+
+  -- Generate sourcetable body
+  -- TODO: Cache sourcetable body bytestring and only update when the
+  -- mountpoints TVar is updated.
   mps <- atomically . readTVar $ mountpoints s
   let st_bs = B.pack $ show $ map fst $ H.toList mps
       len = B.length st_bs
 
-  caster_id <- C.lookupDefault ("SwiftNtripCaster" :: String) (config s) "caster.identifier"
+  -- Output headers
+  -- TODO: Cache headers
+  caster_id <- C.lookupDefault ("SwiftNtripCaster" :: String)
+    (config s) "caster.identifier"
   IO.hPutStrLn h $ printf "Server: %s/1.0" caster_id
   IO.hPutStrLn h "Content-Type: text/plain"
   IO.hPutStrLn h $ printf "Content-Length: %d\n" len
+
+  -- Output sourcetable body
   B.hPutStrLn h st_bs
 
